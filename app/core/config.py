@@ -3,6 +3,7 @@ Application configuration loaded from environment variables via .env file.
 Uses pydantic-settings for typed, validated configuration.
 """
 
+import os
 from functools import lru_cache
 from typing import List
 
@@ -35,17 +36,21 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # Database
-    DATABASE_URL: str = "postgresql://qshield_user:qshield_password@localhost:5432/qshield_db"
+    DATABASE_URL: str = (
+        "sqlite:////tmp/qshield.db"
+        if "VERCEL" in os.environ
+        else "sqlite:///./qshield.db"
+    )
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+    ALLOWED_ORIGINS: str = "*"
 
     # Logging
     LOG_LEVEL: str = "INFO"
 
     # File Upload
     MAX_UPLOAD_SIZE_MB: int = 50
-    UPLOAD_DIR: str = "./uploads"
+    UPLOAD_DIR: str = "/tmp/uploads" if "VERCEL" in os.environ else "./uploads"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
