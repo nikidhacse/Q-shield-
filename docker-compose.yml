@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: qshield-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: qshield_user
+      POSTGRES_PASSWORD: qshield_password
+      POSTGRES_DB: qshield_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qshield_user -d qshield_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Q-Shield Backend API
+  # ---------------------------------------------------------------------------
+  api:
+    build: .
+    container_name: qshield-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://qshield_user:qshield_password@postgres:5432/qshield_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  postgres_data:
